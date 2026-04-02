@@ -66,6 +66,10 @@ class Strava:
         self.client = Client(access_token=access_token, refresh_token=refresh_token, token_expires=expires_at)
         return True
 
-if __name__ == "__main__":
-    strava = Strava()
-    strava.authenticate()
+    def get_activities(self, after=None, before=None, limit=None):
+        try:
+            activities = self.client.get_activities(after=after, before=before, limit=limit)
+            return list(activities)
+        except Exception as e:
+            print(f"Error fetching activities: {e}")
+            return []
