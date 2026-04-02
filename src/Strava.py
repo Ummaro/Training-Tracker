@@ -1,4 +1,5 @@
 from stravalib import Client
+from stravalib.util.limiter import DefaultRateLimiter
 from dotenv import load_dotenv
 import os
 import json
@@ -12,9 +13,11 @@ class Strava:
         self.client_secret = os.getenv("STRAVA_CLIENT_SECRET")
         if self.dev:
             self.url = os.getenv("DEV_URL")
+            self.rate_limiter = DefaultRateLimiter(priority="medium")
         else:
             self.url = os.getenv("PROD_URL")
-        self.client = Client()
+            self.rate_limiter = DefaultRateLimiter(priority="high")
+        self.client = Client(rate_limiter=self.rate_limiter)
 
     def authenticate(self):
         #Dev only, should be replaced by db storage on prod
@@ -26,7 +29,8 @@ class Strava:
                     self.client = Client(
                         access_token=token_data["access_token"],
                         refresh_token=token_data["refresh_token"],
-                        token_expires=token_data["expires_at"]
+                        token_expires=token_data["expires_at"],
+                        rate_limiter=self.rate_limiter
                     )
                     return True
             except Exception as e:
@@ -63,7 +67,12 @@ class Strava:
                 "expires_at": expires_at
             }, f)
 
-        self.client = Client(access_token=access_token, refresh_token=refresh_token, token_expires=expires_at)
+        self.client = Client(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_expires=expires_at,
+            rate_limiter=self.rate_limiter
+        )
         return True
 
     def get_activities(self, after=None, before=None, limit=None):
