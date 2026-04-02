@@ -1,3 +1,5 @@
+TEST_ORDER = 10
+
 from src.Strava import Strava
 
 if __name__ == "__main__":

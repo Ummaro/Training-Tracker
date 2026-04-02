@@ -17,10 +17,23 @@ class tests:
         os.makedirs(self.temp_dir)
         self.test_dir = os.path.join(self.project_root, "tests")
 
-        self.available_tests = [
-            test for test in os.listdir(self.test_dir)
-            if test.endswith(".py") and not test.startswith("__")
-        ]
+        self.available_tests = []
+        for file in os.listdir(self.test_dir):
+            if file.endswith(".py") and not file.startswith("__"):
+                try:
+                    with open(os.path.join(self.test_dir, file), "r") as f:
+                        content = f.read()
+                        order_line = next((line for line in content.splitlines() if line.startswith("TEST_ORDER")), None)
+                        if order_line:
+                            order = int(order_line.split("=")[1].strip())
+                            self.available_tests.append((order, file))
+                        else:
+                            self.available_tests.append((float('inf'), file))
+                except Exception as e:
+                    print(f"Error reading test file {file}: {e}")
+                    self.available_tests.append((float('inf'), file))
+
+        self.ordered_tests = sorted(self.available_tests, key=lambda x: x[0])
 
     def _run_script(self, test_name):
         start_time = time.time()
@@ -39,9 +52,9 @@ class tests:
     def run_test(self, test_name):
         if not test_name:
             global_exit_code = 0
-            for test in self.available_tests:
-                print(f"Executing test {test.split('.')[0]}", end=": ")
-                exit_code, duration = self._run_script(test)
+            for test in self.ordered_tests:
+                print(f"Executing test {test[1].split('.')[0]}", end=": ")
+                exit_code, duration = self._run_script(test[1])
                 self._print_summary(exit_code, duration)
                 if exit_code != 0:
                     global_exit_code = 1
@@ -51,7 +64,7 @@ class tests:
         if test_name and not test_name.endswith(".py"):
             test_name += ".py"
 
-        if test_name not in self.available_tests:
+        if test_name not in [test[1] for test in self.available_tests]:
             print(f"Test '{test_name}' not found.")
             return 1
 

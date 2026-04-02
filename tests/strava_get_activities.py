@@ -1,3 +1,5 @@
+TEST_ORDER = 20
+
 from src.Strava import Strava
 import datetime
 
