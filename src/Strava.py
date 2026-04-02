@@ -3,6 +3,9 @@ from stravalib.util.limiter import DefaultRateLimiter
 from dotenv import load_dotenv
 import os
 import json
+import logging
+
+logging.getLogger("stravalib.util.limiter.SleepingRateLimitRule").setLevel(logging.ERROR)
 
 class Strava:
     def __init__(self, dev=True):
@@ -13,10 +16,10 @@ class Strava:
         self.client_secret = os.getenv("STRAVA_CLIENT_SECRET")
         if self.dev:
             self.url = os.getenv("DEV_URL")
-            self.rate_limiter = DefaultRateLimiter(priority="medium")
+            self.rate_limiter = DefaultRateLimiter(priority="high")
         else:
             self.url = os.getenv("PROD_URL")
-            self.rate_limiter = DefaultRateLimiter(priority="high")
+            self.rate_limiter = DefaultRateLimiter(priority="low")
         self.client = Client(rate_limiter=self.rate_limiter)
 
     def authenticate(self):
@@ -81,4 +84,12 @@ class Strava:
             return list(activities)
         except Exception as e:
             print(f"Error fetching activities: {e}")
+            return []
+
+    def get_laps(self, activity_id):
+        try:
+            laps = self.client.get_activity_laps(activity_id)
+            return list(laps)
+        except Exception as e:
+            print(f"Error fetching laps for activity {activity_id}: {e}")
             return []
