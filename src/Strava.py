@@ -28,7 +28,7 @@ class Strava:
                         refresh_token=token_data["refresh_token"],
                         token_expires=token_data["expires_at"]
                     )
-                    return
+                    return True
             except Exception as e:
                 print(f"Error loading token from file: {e}. Proceeding with authentication flow.")
 
@@ -37,10 +37,11 @@ class Strava:
                 client_id=self.client_id,
                 redirect_uri=f"{self.url}/authorization",
             )
-            code = input(f"Entrez le code d'autorisation obtenu {url}: ")
+            print(f"Dev environment: Please go to the following URL and authorize the application: {url}")
+            code = input(f"Then enter the authorization code in url (code=###): ")
 
         else:
-            #TODO récupérer code depuis argument code dans url de retour -> serveur flask
+            #TODO Get code from url from a flask endpoint and pass it to this function
             code = PLACEHOLDER
         try:
             token_response = self.client.exchange_code_for_token(
@@ -48,7 +49,7 @@ class Strava:
             )
         except Exception as e:
             print(f"Error exchanging code for token: {e}")
-            return
+            return False
 
         access_token = token_response["access_token"]
         refresh_token = token_response["refresh_token"]
@@ -63,6 +64,7 @@ class Strava:
             }, f)
 
         self.client = Client(access_token=access_token, refresh_token=refresh_token, token_expires=expires_at)
+        return True
 
 if __name__ == "__main__":
     strava = Strava()

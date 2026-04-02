@@ -1,7 +1,7 @@
 import os
+import sys
 import argparse
 import subprocess
-import shutil
 import time
 
 GREEN = "\033[32m"
@@ -17,37 +17,35 @@ class tests:
         os.makedirs(self.temp_dir)
         self.test_dir = os.path.join(self.project_root, "tests")
 
-        self.available_tests = os.listdir(self.test_dir)
-        for test in self.available_tests:
-            if test.startswith("__") or not test.endswith(".py"):
-                self.available_tests.remove(test)
+        self.available_tests = [
+            test for test in os.listdir(self.test_dir)
+            if test.endswith(".py") and not test.startswith("__")
+        ]
 
     def _run_script(self, test_name):
         start_time = time.time()
         env = os.environ.copy()
         env["PYTHONPATH"] = self.project_root + ":" + env.get("PYTHONPATH", "")
-        
         completed = subprocess.run(
             ["python3", f"{self.test_dir}/{test_name}"],
-            capture_output=True,
-            text=True,
             env=env,
         )
-        return {
-            "exit_code": completed.returncode,
-            "success": completed.returncode == 0,
-            "stdout": completed.stdout,
-            "stderr": completed.stderr,
-            "execution_time": time.time() - start_time
-        }
+        return completed.returncode, time.time() - start_time
+
+    def _print_summary(self, exit_code, duration):
+        status = f"{GREEN}Success{RESET}" if exit_code == 0 else f"{RED}Failed{RESET}"
+        print(f"{status} (Exit code: {exit_code}) ({duration:.3f}s)")
 
     def run_test(self, test_name):
         if not test_name:
+            global_exit_code = 0
             for test in self.available_tests:
-                print(f"Executing test {test}", end=": ")
-                result = self._run_script(test)
-                self.print_results(result)
-            return
+                print(f"Executing test {test.split('.')[0]}", end=": ")
+                exit_code, duration = self._run_script(test)
+                self._print_summary(exit_code, duration)
+                if exit_code != 0:
+                    global_exit_code = 1
+            return global_exit_code
             
 
         if test_name and not test_name.endswith(".py"):
@@ -55,21 +53,12 @@ class tests:
 
         if test_name not in self.available_tests:
             print(f"Test '{test_name}' not found.")
-            return
+            return 1
 
-        print(f"Executing test {test_name}", end=": ")
-        result = self._run_script(test_name)
-        self.print_results(result)
-
-    def print_results(self, result):
-        execution_time = f"{result['execution_time']:.3f}s -"
-        status = f"{GREEN}Success{RESET}" if result['success'] else f"{RED}Failed{RESET}"
-        exit_code = f"(Exit code: {result['exit_code']})"
-        stdout = f"stdout: {result['stdout']}" if result['stdout'] else ""
-        stderr = f"stderr: {result['stderr']}" if result['stderr'] else ""
-
-
-        print(f"{execution_time} {status} {exit_code} {stdout} {stderr}")
+        print(f"Executing test {test_name.split('.')[0]}", end=": ")
+        exit_code, duration = self._run_script(test_name)
+        self._print_summary(exit_code, duration)
+        return exit_code
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Execute the application tests.")
@@ -77,4 +66,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     test_runner = tests()
-    test_results = test_runner.run_test(args.test)
+    exit_code = test_runner.run_test(args.test)
+    sys.exit(exit_code)
