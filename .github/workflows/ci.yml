@@ -85,4 +85,4 @@ jobs:
 
       - name: Restart Systemd Service
         run: |
-          sudo systemctl restart mon-app.service
+          sudo systemctl restart Training-Tracker.service
