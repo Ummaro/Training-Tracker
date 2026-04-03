@@ -18,7 +18,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -r requirement.txt
 
       - name: Write Strava token from secret
         env:
@@ -66,3 +66,24 @@ jobs:
           echo "</details>" >> $GITHUB_STEP_SUMMARY
 
           exit $EXIT_CODE
+
+  deploy-dev:
+    needs: run-custom-tests
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/dev'
+    
+    steps:
+      - name: Pull latest code
+        run: |
+          cd /home/dev/Training-Tracker
+          git pull origin dev
+
+      - name: Update dependencies
+        run: |
+          cd /home/dev/Training-Tracker
+          ./venv/bin/pip install -r requirement.txt
+
+      - name: Restart Application
+        run: |          
+          pkill -f main.py || true
+          nohup ./venv/bin/python main.py > app.log 2>&1 &
