@@ -18,7 +18,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirement.txt
+          pip install -r requirements.txt
 
       - name: Write Strava token from secret
         env:
@@ -81,7 +81,7 @@ jobs:
       - name: Update dependencies
         run: |
           cd /home/dev/Training-Tracker
-          ./venv/bin/pip install -r requirement.txt
+          ./venv/bin/pip install -r requirements.txt
 
       - name: Restart Application
         run: |          
