@@ -3,6 +3,7 @@ import sys
 import argparse
 import subprocess
 import time
+import shutil
 
 GREEN = "\033[32m"
 RED = "\033[31m"
@@ -13,8 +14,8 @@ class tests:
         self.project_root = os.path.dirname(os.path.abspath(__file__))
         self.temp_dir = os.path.join(self.project_root, "temp")
         if os.path.exists(self.temp_dir):
-            os.rmdir(self.temp_dir)
-        os.makedirs(self.temp_dir)
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
+        os.makedirs(self.temp_dir, exist_ok=True)
         self.test_dir = os.path.join(self.project_root, "tests")
 
         self.available_tests = []
@@ -38,9 +39,10 @@ class tests:
     def _run_script(self, test_name):
         start_time = time.time()
         env = os.environ.copy()
-        env["PYTHONPATH"] = self.project_root + ":" + env.get("PYTHONPATH", "")
+        existing_pythonpath = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = (self.project_root if not existing_pythonpath else self.project_root + os.pathsep + existing_pythonpath)
         completed = subprocess.run(
-            ["python3", f"{self.test_dir}/{test_name}"],
+              [sys.executable, f"{self.test_dir}/{test_name}"],
             env=env,
         )
         return completed.returncode, time.time() - start_time
