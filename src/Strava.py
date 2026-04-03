@@ -93,3 +93,12 @@ class Strava:
         except Exception as e:
             print(f"Error fetching laps for activity {activity_id}: {e}")
             return []
+        
+    def deauthorize(self):
+        try:
+            self.client.deauthorize()
+            token_file = os.path.join(self.project_root, "strava_token.json")
+            if os.path.exists(token_file):
+                os.remove(token_file)
+        except Exception as e:
+            print(f"Error during deauthorization: {e}")

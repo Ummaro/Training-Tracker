@@ -5,11 +5,11 @@ from src.Strava import Strava
 if __name__ == "__main__":
         strava = Strava()
         if strava.authenticate():
-            activity_id ='17941186814'
+            activity_id ='17962925643'
             laps = strava.get_laps(activity_id)
             if laps:
-                if len(laps) != 18:
-                    print(f"Expected 18 laps, got {len(laps)}")
+                if len(laps) != 7:
+                    print(f"Expected 7 laps, got {len(laps)}")
                     exit(1)
                 exit(0)
             else:
