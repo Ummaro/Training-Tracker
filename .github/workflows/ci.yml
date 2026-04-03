@@ -1,0 +1,39 @@
+name: Custom Python Tests
+
+on: [push, pull_request]
+
+jobs:
+  run-custom-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Write Strava token from secret
+        env:
+          STRAVA_TOKEN_JSON: ${{ secrets.STRAVA_TOKEN_JSON }}
+        run: |
+          if [ -z "$STRAVA_TOKEN_JSON" ]; then
+            echo "Missing STRAVA_TOKEN_JSON secret"
+            exit 1
+          fi
+          printf '%s' "$STRAVA_TOKEN_JSON" > strava_token.json
+
+      - name: Run tests
+        env:
+          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          DEV_URL: ${{ secrets.DEV_URL }}
+          PROD_URL: ${{ secrets.PROD_URL }}
+        run: python test.py
