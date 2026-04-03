@@ -36,4 +36,33 @@ jobs:
           STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
           DEV_URL: ${{ secrets.DEV_URL }}
           PROD_URL: ${{ secrets.PROD_URL }}
-        run: python test.py
+        run: |
+          python test.py | sed 's/\x1b\[[0-9;]*m//g' > test_results.log 2>&1
+          EXIT_CODE=$?
+
+          echo "### Tests results" >> $GITHUB_STEP_SUMMARY
+          echo "| Test | Status | Duration |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+
+          grep "Executing test" test_results.log | while read -r line; do
+            NAME=$(echo $line | awk -F'test ' '{print $2}' | awk -F':' '{print $1}')
+            STATUS=$(echo $line | grep -q "Success" && echo "✅ Success" || echo "❌ Failed")
+            TIME=$(echo $line | grep -o '([0-9.]*s)')
+            echo "| $NAME | $STATUS | $TIME |" >> $GITHUB_STEP_SUMMARY
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "**Result :** All tests passed." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Result :** Some tests failed." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "<details><summary>Logs</summary>" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          cat test_results.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "</details>" >> $GITHUB_STEP_SUMMARY
+
+          exit $EXIT_CODE
