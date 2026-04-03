@@ -81,9 +81,8 @@ jobs:
       - name: Update dependencies
         run: |
           cd /home/dev/Training-Tracker
-          ./venv/bin/pip install -r requirements.txt
+          ./.venv/bin/pip install -r requirements.txt
 
-      - name: Restart Application
-        run: |          
-          pkill -f main.py || true
-          nohup ./venv/bin/python main.py > app.log 2>&1 &
+      - name: Restart Systemd Service
+        run: |
+          sudo systemctl restart mon-app.service
