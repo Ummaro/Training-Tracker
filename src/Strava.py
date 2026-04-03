@@ -100,5 +100,15 @@ class Strava:
             token_file = os.path.join(self.project_root, "strava_token.json")
             if os.path.exists(token_file):
                 os.remove(token_file)
+            return True
         except Exception as e:
             print(f"Error during deauthorization: {e}")
+            return False
+
+    def get_athlete(self):
+        try:
+            athlete = self.client.get_athlete()
+            return athlete
+        except Exception as e:
+            print(f"Error fetching athlete information: {e}")
+            return None
