@@ -5,6 +5,7 @@ from src.Database import Database
 import os
 import json
 import logging
+import time
 
 logging.getLogger("stravalib.util.limiter.SleepingRateLimitRule").setLevel(logging.ERROR)
 
@@ -26,69 +27,86 @@ class Strava:
             self.rate_limiter = DefaultRateLimiter(priority="low")
             self.db = Database(os.path.join(self.project_root, "strava_prod.db"))
 
-    def authenticate(self, code=None , athlete_id=None):
-        client = Client(rate_limiter=self.rate_limiter)
-        if self.dev:
-            token_file = os.path.join(self.project_root, "strava_token.json")
-            if os.path.exists(token_file):
+    def authenticate(self, code=None, athlete_id=None):
+            client = Client(rate_limiter=self.rate_limiter)
+            token_data = None
+
+            if self.dev and not code and not athlete_id:
+                token_file = os.path.join(self.project_root, "strava_token.json")
+                if os.path.exists(token_file):
+                    try:
+                        with open(token_file, "r") as f:
+                            token_data = json.load(f)
+                    except Exception as e:
+                        print(f"Error loading file: {e}")
+
+            if code:
                 try:
-                    with open(token_file, "r") as f:
-                        token_data = json.load(f)
-                except Exception as e:
-                    print(f"Error loading token from file: {e}. Proceeding with authentication flow.")
-                    url = client.authorization_url(
-                        client_id=self.client_id,
-                        redirect_uri=f"{self.url}/authorization",
+                    token_data = client.exchange_code_for_token(
+                        client_id=self.client_id, client_secret=self.client_secret, code=code
                     )
-                    print(f"Dev environment: Please go to the following URL and authorize the application: {url}")
-                    code = input(f"Then enter the authorization code in url (code=###): ")
-
-        if code:
-            try:
-                token_data = client.exchange_code_for_token(
-                    client_id=self.client_id, client_secret=self.client_secret, code=code
-                )
-            except Exception as e:
-                print(f"Error exchanging code for token: {e}")
+                except Exception as e:
+                    print(f"Error exchange: {e}")
+                    return False
+            
+            elif athlete_id:
+                token_data = self.db.get_token_by_athlete_id(athlete_id)
+            
+            if not token_data:
+                if self.dev:
+                    url = client.authorization_url(client_id=self.client_id, redirect_uri=f"{self.url}/authorization")
+                    print(f"Authorize here: {url}")
+                    code = input("Code: ")
+                    return self.authenticate(code=code)
                 return False
-        
-        if athlete_id:
-            token_data = self.db.get_token_by_athlete_id(athlete_id)
-        
-        if token_data is None:
-            print("No token")
-            return False
 
-        access_token = token_data["access_token"]
-        refresh_token = token_data["refresh_token"]
-        expires_at = token_data["expires_at"]
+            client.access_token = token_data["access_token"]
+            client.refresh_token = token_data["refresh_token"]
+            client.token_expires = token_data["expires_at"]
 
-        client = Client(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            token_expires=expires_at,
-            rate_limiter=self.rate_limiter
-        )
+            if time.time() >= client.token_expires:
+                token_data = self.refresh_token(client, athlete_id)
+                if not token_data: return False
 
-        if self.dev:
-            with open(token_file, "w") as f:
-                json.dump({
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "expires_at": expires_at
-                }, f)
+            if code and not self.dev:
+                athlete = self.get_athlete(client)
+                self.db.insert_token({
+                    "athlete_id": athlete.id,
+                    "access_token": token_data["access_token"],
+                    "refresh_token": token_data["refresh_token"],
+                    "expires_at": token_data["expires_at"],
+                })
+                self.db.insert_athlete(athlete)
 
-        else:
-            athlete = self.get_athlete(client)
-            self.db.insert_token({
-                "athlete_id": athlete.id,
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "expires_at": expires_at,
-            })
-            self.db.insert_athlete(athlete)
+            return client
 
-        return client
+    def refresh_token(self, client, athlete_id):
+        try:
+            res = client.refresh_access_token(
+                client_id=self.client_id,
+                client_secret=self.client_secret,
+                refresh_token=client.refresh_token
+            )
+            token_data = {
+                "access_token": res["access_token"],
+                "refresh_token": res["refresh_token"],
+                "expires_at": res["expires_at"]
+            }
+            
+            if athlete_id:
+                db_data = token_data.copy()
+                db_data["athlete_id"] = athlete_id
+                self.db.insert_token(db_data)
+
+            if self.dev:
+                token_file = os.path.join(self.project_root, "strava_token.json")
+                with open(token_file, "w") as f:
+                    json.dump(token_data, f)
+            
+            return token_data
+        except Exception as e:
+            print(f"Error refreshing token: {e}")
+            return None
 
     def get_activities(self, client, after=None, before=None, limit=None):
         try:
