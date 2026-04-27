@@ -1,4 +1,4 @@
-TEST_ORDER = 50
+TEST_ORDER = -1
 
 from src.Strava import Strava
 

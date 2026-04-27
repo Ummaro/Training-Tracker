@@ -55,6 +55,9 @@ class tests:
         if not test_name:
             global_exit_code = 0
             for test in self.ordered_tests:
+                if test[0] < 0:
+                    print(f"Skipping test {test[1].split('.')[0]}")
+                    continue
                 print(f"Executing test {test[1].split('.')[0]}", end=": ")
                 exit_code, duration = self._run_script(test[1])
                 self._print_summary(exit_code, duration)
