@@ -4,8 +4,9 @@ from src.Strava import Strava
 
 if __name__ == "__main__":
     strava = Strava()
-    if strava.authenticate():
-        athlete = strava.get_athlete()
+    client = strava.authenticate()
+    if client:
+        athlete = strava.get_athlete(client)
         if athlete:
             if athlete.id != '1355550282'and athlete.firstname != 'DEV' and athlete.lastname != 'Ummaro':
                 print("Retrieved athlete information does not match expected values")

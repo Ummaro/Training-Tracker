@@ -4,9 +4,10 @@ from src.Strava import Strava
 
 if __name__ == "__main__":
     strava = Strava()
-    if strava.authenticate():
-        if strava.deauthorize():
-            if strava.get_athlete() is not None:
+    client = strava.authenticate()
+    if client:
+        if strava.deauthorize(client):
+            if strava.get_athlete(client) is not None:
                 print("Athlete information should not be retrievable after deauthorization")
                 exit(1)
             exit(0)

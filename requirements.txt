@@ -1,2 +1,3 @@
 stravalib
 dotenv
+sqlite3

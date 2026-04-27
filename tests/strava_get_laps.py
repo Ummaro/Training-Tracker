@@ -4,9 +4,10 @@ from src.Strava import Strava
 
 if __name__ == "__main__":
         strava = Strava()
-        if strava.authenticate():
+        client = strava.authenticate()
+        if client:
             activity_id ='17962925643'
-            laps = strava.get_laps(activity_id)
+            laps = strava.get_laps(client, activity_id)
             if laps:
                 if len(laps) != 7:
                     print(f"Expected 7 laps, got {len(laps)}")

@@ -1,5 +1,5 @@
-.env
-.db
+*.env
+*.db
 strava_token.json
 /__pycache__/
 /*venv/

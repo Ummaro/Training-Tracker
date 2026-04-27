@@ -13,8 +13,7 @@ class tests:
     def __init__(self):
         self.project_root = os.path.dirname(os.path.abspath(__file__))
         self.temp_dir = os.path.join(self.project_root, "temp")
-        if os.path.exists(self.temp_dir):
-            shutil.rmtree(self.temp_dir, ignore_errors=True)
+        self.cleanup()
         os.makedirs(self.temp_dir, exist_ok=True)
         self.test_dir = os.path.join(self.project_root, "tests")
 
@@ -77,6 +76,14 @@ class tests:
         exit_code, duration = self._run_script(test_name)
         self._print_summary(exit_code, duration)
         return exit_code
+    
+    def cleanup(self):
+        if os.path.exists(self.temp_dir):
+            for entry in os.scandir(self.temp_dir):
+                if entry.is_dir(follow_symlinks=False):
+                    shutil.rmtree(entry.path)
+                else:
+                    os.remove(entry.path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Execute the application tests.")
@@ -85,4 +92,5 @@ if __name__ == "__main__":
 
     test_runner = tests()
     exit_code = test_runner.run_test(args.test)
+    test_runner.cleanup()
     sys.exit(exit_code)

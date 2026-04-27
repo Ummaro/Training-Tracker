@@ -5,15 +5,16 @@ import datetime
 
 if __name__ == "__main__":
     strava = Strava()
-    if strava.authenticate():
-        activities = strava.get_activities(limit=2)
+    client = strava.authenticate()
+    if client:
+        activities = strava.get_activities(client, limit=2)
         if len(activities) != 2:
             print(f"Expected 2 activities, got {len(activities)}")
             exit(1)
         
         after = datetime.datetime(2026, 3, 25, tzinfo=datetime.timezone.utc)
         before = datetime.datetime(2026, 3, 26, tzinfo=datetime.timezone.utc)
-        activities = strava.get_activities(after=after, before=before)
+        activities = strava.get_activities(client, after=after, before=before)
         if activities:
             for activity in activities:
                 if activity.start_date < after or activity.start_date > before:
