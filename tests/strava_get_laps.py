@@ -1,6 +1,7 @@
 TEST_ORDER = 30
 
 from src.Strava import Strava
+import json
 
 if __name__ == "__main__":
         strava = Strava()
@@ -8,6 +9,10 @@ if __name__ == "__main__":
         if client:
             activity_id ='17962925643'
             laps = strava.get_laps(client, activity_id)
+
+            with open("laps.json", "w") as f:
+                json.dump(laps, f, default=str)
+
             if laps:
                 if len(laps) != 7:
                     print(f"Expected 7 laps, got {len(laps)}")

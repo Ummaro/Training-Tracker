@@ -1,6 +1,6 @@
 *.env
 *.db
-strava_token.json
+*.json
 /__pycache__/
 /*venv/
 *.pyc

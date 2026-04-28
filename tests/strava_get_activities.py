@@ -2,12 +2,17 @@ TEST_ORDER = 20
 
 from src.Strava import Strava
 import datetime
+import json
 
 if __name__ == "__main__":
     strava = Strava()
     client = strava.authenticate()
     if client:
         activities = strava.get_activities(client, limit=2)
+
+        with open("activities.json", "w") as f:
+            json.dump(activities, f, default=str)
+
         if len(activities) != 2:
             print(f"Expected 2 activities, got {len(activities)}")
             exit(1)

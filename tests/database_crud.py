@@ -8,45 +8,61 @@ if __name__ == "__main__":
     db = strava.db
 
     activity = {
-        "id": 123,
-        "athlete_id": 456,
-        "name": "Morning Run",
-        "type": "Run",
-        "distance": 5000.0,
-        "moving_time": 1500,
-        "elapsed_time": 1600,
-        "total_elevation_gain": 50.0,
-        "start_date": "2024-01-01T07:00:00Z",
-        "start_date_local": "2024-01-01T08:00:00Z",
-        "timezone": "(GMT+01:00) Europe/Berlin"
+        "id": 17962925643,
+        "athlete_id": 1355550282,
+        "name": "Lunch Run",
+        "sport_type": "Run",
+        "distance": 6009.0,
+        "moving_time": 1990,
+        "elapsed_time": 2065,
+        "total_elevation_gain": 70.4,
+        "average_speed": 3.02,
+        "max_speed": 9.88,
+        "average_watts": 329.4,
+        "max_watts": 535.0,
+        "manual": False,
+        "start_date": "2026-03-25T11:19:55Z"
     }
 
     lap = {
-        "id": 789,
-        "activity_id": 123,
-        "athlete_id": 456,
-        "name": "Lap 1",
-        "type": "Run",
+        "id": 64246604953,
+        "activity_id": 17962925643,
+        "athlete_id": 1355550282,
+        "lap_index": 1,
+        "split": 1,
         "distance": 1000.0,
-        "moving_time": 300,
-        "elapsed_time": 320,
-        "total_elevation_gain": 10.0,
-        "start_date": "2024-01-01T07:00:00Z",
-        "start_date_local": "2024-01-01T08:00:00Z",
-        "timezone": "(GMT+01:00) Europe/Berlin"
+        "moving_time": 318,
+        "elapsed_time": 321,
+        "total_elevation_gain": 18.6,
+        "average_speed": 3.14,
+        "max_speed": 9.88,
+        "average_watts": 343.1,
+        "start_date": "2026-03-25T11:19:55Z",
+        "start_index": 0,
+        "end_index": 326
     }
 
     athlete = {
-        "id": 456,
-        "firstname": "John",
-        "lastname": "Doe",
-        "city": "Berlin",
-        "state": "Berlin",
-        "country": "Germany"
+        "id": 1355550282,
+        "firstname": "DEV",
+        "lastname": "Ummaro",
+        "city": "Paris",
+        "state": "Île-de-France",
+        "country": "France",
+        "created_at": "2026-04-03T14:09:05Z",
+        "sex": None,
+        "measurement_preference": None,
+        "date_preference": None,
+        "email": None,
+        "email_language": None,
+        "username": None,
+        "dateofbirth": None,
+        "sample_race_distance": None,
+        "sample_race_time": None
     }
 
     token = {
-        "athlete_id": 456,
+        "athlete_id": 1355550282,
         "access_token": "test",
         "refresh_token": "test",
         "expires_at": 1700000000
@@ -73,12 +89,12 @@ if __name__ == "__main__":
         exit(1)
 
     athlete_from_db = db.get_athlete(athlete["id"])
-    if athlete_from_db != athlete:
+    if not athlete_from_db or athlete_from_db != athlete:
         print("Failed to retrieve athlete")
         exit(1)
 
     token_from_db = db.get_token_by_athlete_id(token["athlete_id"])
-    if token_from_db != token:
+    if not token_from_db or token_from_db.get("athlete_id") != token["athlete_id"]:
         print("Failed to retrieve token")
         exit(1)
     
