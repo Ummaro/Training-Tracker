@@ -1,10 +1,16 @@
 TEST_ORDER = 10
 
 from src.Strava import Strava
+from src.Server import Server
 
 if __name__ == "__main__":
     strava = Strava()
-    if strava.authenticate():
-        exit(0)
-    else:
+    if not strava.authenticate():
         exit(1)
+
+    server = Server(dev=True)
+    server.run()
+    if not server.strava.authenticate():
+        exit(2)
+    
+    exit(0)

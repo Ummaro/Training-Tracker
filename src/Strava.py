@@ -54,7 +54,7 @@ class Strava:
             
             if not token_data:
                 if self.dev:
-                    url = client.authorization_url(client_id=self.client_id, redirect_uri=f"{self.url}/authorization")
+                    url = self.generate_url()
                     print(f"Authorize here: {url}")
                     code = input("Code: ")
                     return self.authenticate(code=code)
@@ -78,7 +78,16 @@ class Strava:
                 })
                 self.db.insert_athlete(athlete)
 
+            elif self.dev:
+                with open(os.path.join(self.project_root, "strava_token.json"), "w") as f:
+                    json.dump(token_data, f)
+
             return client
+    
+    def generate_url(self):
+        client = Client(rate_limiter=self.rate_limiter)
+        url = client.authorization_url(client_id=self.client_id, redirect_uri=f"{self.url}/authorization")
+        return url
 
     def refresh_token(self, client, athlete_id):
         try:
