@@ -28,62 +28,80 @@ class Strava:
             self.db = Database(os.path.join(self.project_root, "strava_prod.db"))
 
     def authenticate(self, code=None, athlete_id=None):
-            client = Client(rate_limiter=self.rate_limiter)
-            token_data = None
+        client = Client(rate_limiter=self.rate_limiter)
+        token_data = None
 
-            if self.dev and not code and not athlete_id:
-                token_file = os.path.join(self.project_root, "strava_token.json")
-                if os.path.exists(token_file):
-                    try:
-                        with open(token_file, "r") as f:
-                            token_data = json.load(f)
-                    except Exception as e:
-                        print(f"Error loading file: {e}")
+        if code:
+            token_data = client.exchange_code_for_token(
+                client_id=self.client_id, 
+                client_secret=self.client_secret, 
+                code=code
+            )
+        elif athlete_id:
+            token_data = self.db.get_token_by_athlete_id(athlete_id)
+        elif self.dev:
+            token_data = self._load_local_token()
 
-            if code:
-                try:
-                    token_data = client.exchange_code_for_token(
-                        client_id=self.client_id, client_secret=self.client_secret, code=code
-                    )
-                except Exception as e:
-                    print(f"Error exchange: {e}")
-                    return False
-            
-            elif athlete_id:
-                token_data = self.db.get_token_by_athlete_id(athlete_id)
-            
-            if not token_data:
-                if self.dev:
-                    url = self.generate_url()
-                    print(f"Authorize here: {url}")
-                    code = input("Code: ")
-                    return self.authenticate(code=code)
-                return False
+        if not token_data:
+            if self.dev:
+                return self._manual_dev_auth()
+            return False
+        
 
-            client.access_token = token_data["access_token"]
-            client.refresh_token = token_data["refresh_token"]
-            client.token_expires = token_data["expires_at"]
+        client.access_token = token_data["access_token"]
+        client.refresh_token = token_data["refresh_token"]
+        client.token_expires = token_data["expires_at"]
 
-            if time.time() >= client.token_expires:
-                token_data = self.refresh_token(client, athlete_id)
-                if not token_data: return False
+        if not athlete_id:
+            athlete_id = client.get_athlete().id
 
-            if code and not self.dev:
-                athlete = self.get_athlete(client)
-                self.db.insert_token({
-                    "athlete_id": athlete.id,
-                    "access_token": token_data["access_token"],
-                    "refresh_token": token_data["refresh_token"],
-                    "expires_at": token_data["expires_at"],
-                })
-                self.db.insert_athlete(athlete)
+        if time.time() >= client.token_expires:
+            token_data = self.refresh_token(client, athlete_id)
+            if not token_data: return False
 
-            elif self.dev:
-                with open(os.path.join(self.project_root, "strava_token.json"), "w") as f:
-                    json.dump(token_data, f)
+        self._save_token(token_data, athlete_id)
 
-            return client
+        return client
     
+    def _load_local_token(self):
+        token_file = os.path.join(self.project_root, "strava_token.json")
+        if os.path.exists(token_file):
+            with open(token_file, "r") as f:
+                return json.load(f)
+        return None
+    
+    def _manual_dev_auth(self):
+        url = self.generate_url()
+        print(f"Authentify with URL: {url}")
+        
+        token_file = os.path.join(self.project_root, "strava_token.json")
+        
+        print("Waiting for http response...")
+        timeout = 60
+        start_time = time.time()
+        
+        while time.time() - start_time < timeout:
+            if os.path.exists(token_file):
+                print("Response received")
+                with open(token_file, "r") as f:
+                    token_data = json.load(f)
+                return self.authenticate() # Rappel sans arguments pour tout valider
+            time.sleep(1)
+            
+        print("Error: Timeout exceeded.")
+        return False
+    
+    def _save_token(self, token_data, athlete_id=None):
+        if athlete_id:
+            db_data = token_data.copy()
+            db_data["athlete_id"] = athlete_id
+            self.db.insert_token(db_data)
+
+        if self.dev:
+            token_file = os.path.join(self.project_root, "strava_token.json")
+            with open(token_file, "w") as f:
+                json.dump(token_data, f)
+        
     def generate_url(self):
         client = Client(rate_limiter=self.rate_limiter)
         url = client.authorization_url(client_id=self.client_id, redirect_uri=f"{self.url}/authorization")
@@ -143,11 +161,3 @@ class Strava:
         except Exception as e:
             print(f"Error during deauthorization: {e}")
             return False
-
-    def get_athlete(self, client):
-        try:
-            athlete = client.get_athlete()
-            return athlete
-        except Exception as e:
-            print(f"Error fetching athlete information: {e}")
-            return None

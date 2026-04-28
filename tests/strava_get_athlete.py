@@ -8,7 +8,7 @@ if __name__ == "__main__":
     strava = Strava()
     client = strava.authenticate()
     if client:
-        athlete = strava.get_athlete(client)
+        athlete = client.get_athlete()
 
         with open("athlete.json", "w") as f:
             json.dump(athlete, f, default=str)

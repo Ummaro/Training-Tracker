@@ -1,14 +1,16 @@
 import flask
 import threading
 import time
+from waitress import serve
 from src.Strava import Strava
 
 class Server:
     def __init__(self, dev=True):
         self.app = flask.Flask(__name__)
         self.strava = Strava(dev=dev)
-
-        if dev:
+        self.dev = dev
+        
+        if self.dev:
             self.debug = True
             self.port = 5000
             self.host = "localhost"
@@ -38,6 +40,16 @@ class Server:
             return flask.redirect(url)
         
     def run(self):
-        self.thread = threading.Thread(target=self.run, daemon=True)
-        self.thread.start()
-        time.sleep(1)
+            if self.dev:
+                thread = threading.Thread(
+                    target=serve, 
+                    args=(self.app,), 
+                    kwargs={'host': self.host, 'port': self.port, '_quiet': True},
+                    daemon=True
+                )
+                thread.start()
+                time.sleep(1)
+                print(f"Serveur de TEST démarré sur {self.host}:{self.port}")
+            else:
+                print(f"Serveur PROD démarré sur {self.host}:{self.port}")
+                serve(self.app, host=self.host, port=self.port)
