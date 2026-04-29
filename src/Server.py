@@ -55,6 +55,26 @@ class Server:
         def login():
             return "Please authenticate <a href='/authenticate'>here</a>"
         
+        @self.app.route('/strava/webhook', methods=['GET', 'POST'])
+        def strava_webhook():
+            if flask.request.method == 'GET':
+                verify_token = os.getenv("STRAVA_VERIFY_TOKEN")
+                mode = flask.request.args.get('hub.mode')
+                token = flask.request.args.get('hub.verify_token')
+                challenge = flask.request.args.get('hub.challenge')
+                mode = flask.request.args.get('hub.mode')
+                token = flask.request.args.get('hub.verify_token')
+                challenge = flask.request.args.get('hub.challenge')
+
+                if mode == 'subscribe' and token == verify_token:
+                    return flask.jsonify({"hub.challenge": challenge}), 200
+                return "Forbidden", 403
+
+            if flask.request.method == 'POST':
+                data = flask.request.json
+
+                return "EVENT_RECEIVED", 200
+        
     def run(self):
             if self.dev:
                 thread = threading.Thread(
