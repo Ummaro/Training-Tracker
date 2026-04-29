@@ -7,7 +7,7 @@ if __name__ == "__main__":
     client = strava.authenticate()
     if client:
         if strava.deauthorize(client):
-            if strava.get_athlete(client) is not None:
+            if client.get_athlete(client) is not None:
                 print("Athlete information should not be retrievable after deauthorization")
                 exit(1)
             exit(0)
