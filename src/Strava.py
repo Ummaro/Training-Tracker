@@ -27,7 +27,7 @@ class Strava:
             self.rate_limiter = DefaultRateLimiter(priority="low")
             self.db = Database(os.path.join(self.project_root, "strava_prod.db"))
 
-    def authenticate(self, code=None):
+    def authenticate(self, code=None, athlete_id=None):
         client = Client(rate_limiter=self.rate_limiter)
         token_data = None
 
@@ -37,6 +37,8 @@ class Strava:
                 client_secret=self.client_secret, 
                 code=code
             )
+        elif athlete_id:
+            token_data = self.db.get_token_by_athlete_id(athlete_id)
         elif self.dev:
             token_data = self._load_local_token()
 
@@ -50,8 +52,8 @@ class Strava:
         client.refresh_token = token_data["refresh_token"]
         client.token_expires = token_data["expires_at"]
 
-
-        athlete_id = client.get_athlete().id
+        if not athlete_id:
+            athlete_id = client.get_athlete().id
 
         if time.time() >= client.token_expires:
             token_data = self.refresh_token(client, athlete_id)
