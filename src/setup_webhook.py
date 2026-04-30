@@ -1,5 +1,6 @@
 from stravalib.client import Client
 from dotenv import load_dotenv
+from src.Server import Server
 import os
 
 
@@ -25,4 +26,5 @@ def setup_strava_webhook():
 
 if __name__ == "__main__":
     load_dotenv()
+    Server(dev=False).run()
     setup_strava_webhook()
