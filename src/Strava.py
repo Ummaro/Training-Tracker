@@ -37,10 +37,11 @@ class Strava:
                 client_secret=self.client_secret, 
                 code=code
             )
-        elif athlete_id:
-            token_data = self.db.get_token_by_athlete_id(athlete_id)
         elif self.dev:
             token_data = self._load_local_token()
+
+        elif athlete_id:
+            token_data = self.db.get_token_by_athlete_id(athlete_id)
 
         if not token_data:
             if self.dev:
@@ -142,6 +143,14 @@ class Strava:
         except Exception as e:
             print(f"Error fetching activities: {e}")
             return []
+        
+    def get_activity(self, client, activity_id):
+        try:
+            activity = client.get_activity(activity_id)
+            return activity
+        except Exception as e:
+            print(f"Error fetching activity {activity_id}: {e}")
+            return None
 
     def get_laps(self, client, activity_id):
         try:

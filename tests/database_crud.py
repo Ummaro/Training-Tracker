@@ -8,10 +8,10 @@ if __name__ == "__main__":
     db = strava.db
 
     activity = {
-        "id": 17962925643,
-        "athlete_id": 1355550282,
+        "id": 17962925642,
+        "athlete": {"id": 1355550282},
         "name": "Lunch Run",
-        "sport_type": "Run",
+        "sport_type": {"root": "Run"},
         "distance": 6009.0,
         "moving_time": 1990,
         "elapsed_time": 2065,
@@ -25,9 +25,9 @@ if __name__ == "__main__":
     }
 
     lap = {
-        "id": 64246604953,
-        "activity_id": 17962925643,
-        "athlete_id": 1355550282,
+        "id": 64246604952,
+        "activity_id": 17962925642,
+        "athlete": {"id": 1355550282},
         "lap_index": 1,
         "split": 1,
         "distance": 1000.0,
@@ -99,12 +99,12 @@ if __name__ == "__main__":
         exit(1)
     
     activities_from_db = db.get_activities_by_athlete_id(athlete["id"])
-    if len(activities_from_db) != 1 or activities_from_db[0] != activity:
+    if len(activities_from_db) != 1 or activities_from_db[0]["id"] != activity["id"]:
         print("Failed to retrieve activities")
         exit(1)
 
     laps_from_db = db.get_laps_by_activity_id(activity["id"])
-    if len(laps_from_db) != 1 or laps_from_db[0] != lap:
+    if len(laps_from_db) != 1 or laps_from_db[0]["id"] != lap["id"]:
         print("Failed to retrieve laps")
         exit(1)
 

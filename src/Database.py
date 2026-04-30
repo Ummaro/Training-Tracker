@@ -115,7 +115,7 @@ class Database:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 self._get_value(activity, "id"),
-                self._get_value(activity, "athlete_id"),
+                self._get_value(self._get_value(activity, "athlete"), "id"),
                 self._get_value(activity, "average_speed"),
                 self._get_value(activity, "average_watts"),
                 self._get_value(activity, "distance"),
@@ -125,7 +125,7 @@ class Database:
                 self._get_value(activity, "max_watts"),
                 self._get_value(activity, "moving_time"),
                 self._get_value(activity, "name"),
-                self._get_value(activity, "sport_type"),
+                self._get_value(self._get_value(activity, "sport_type"), "root"),
                 self._get_value(activity, "start_date"),
                 self._get_value(activity, "total_elevation_gain")
             ))
@@ -140,7 +140,7 @@ class Database:
             ''', (
                 self._get_value(lap, "id"),
                 activity_id,
-                self._get_value(lap, "athlete_id"),
+                self._get_value(self._get_value(lap, "athlete"), "id"),
                 self._get_value(lap, "average_speed"),
                 self._get_value(lap, "distance"),
                 self._get_value(lap, "elapsed_time"),
@@ -210,6 +210,10 @@ class Database:
 
     def get_athlete(self, athlete_id):
         return self.get_athlete_by_id(athlete_id)
+    
+    def get_activity(self, activity_id):
+        cursor = self.connection.execute('SELECT * FROM activities WHERE id = ?', (activity_id,))
+        return self._row_to_dict(cursor.fetchone())
     
     def get_token_by_athlete_id(self, athlete_id):
         cursor = self.connection.execute('SELECT * FROM token WHERE athlete_id = ? ORDER BY expires_at DESC', (athlete_id,))

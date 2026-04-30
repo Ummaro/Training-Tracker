@@ -73,6 +73,20 @@ class Server:
             if flask.request.method == 'POST':
                 data = flask.request.json
 
+                if data and data.get('object_type') == 'activity':
+                    athlete_id = data.get('owner_id')
+                    if athlete_id:
+                        client = self.strava.authenticate(athlete_id=athlete_id)
+                        if client:
+                            activity_id = data.get('object_id')
+                            if activity_id:
+                                activity = self.strava.get_activity(client, activity_id)
+                                if activity:
+                                    self.strava.db.insert_activity(activity)
+                                    laps = self.strava.get_laps(client, activity_id)
+                                    for lap in laps:
+                                        self.strava.db.insert_lap(lap, activity_id)
+
                 return "EVENT_RECEIVED", 200
         
     def run(self):
